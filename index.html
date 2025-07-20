@@ -1,885 +1,867 @@
-<script type="text/javascript">
-  var gk_isXlsx = false;
-  var gk_xlsxFileLookup = {};
-  var gk_fileData = {};
-  function filledCell(cell) {
-    return cell !== "" && cell != null;
-  }
-  function loadFileData(filename) {
-    if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-      try {
-        var workbook = XLSX.read(gk_fileData[filename], { type: "base64" });
-        var firstSheetName = workbook.SheetNames[0];
-        var worksheet = workbook.Sheets[firstSheetName];
-
-        // Convert sheet to JSON to filter blank rows
-        var jsonData = XLSX.utils.sheet_to_json(worksheet, {
-          header: 1,
-          blankrows: false,
-          defval: "",
-        });
-        // Filter out blank rows (rows where all cells are empty, null, or undefined)
-        var filteredData = jsonData.filter((row) => row.some(filledCell));
-
-        // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-        var headerRowIndex = filteredData.findIndex(
-          (row, index) =>
-            row.filter(filledCell).length >=
-            filteredData[index + 1]?.filter(filledCell).length
-        );
-        // Fallback
-        if (headerRowIndex === -1 || headerRowIndex > 25) {
-          headerRowIndex = 0;
-        }
-
-        // Convert filtered JSON back to CSV
-        var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-        csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-        return csv;
-      } catch (e) {
-        console.error(e);
-        return "";
-      }
-    }
-    return gk_fileData[filename] || "";
-  }
-</script>
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Container Loading Qty Calculator</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>CONTAINER LOADING QTY CALCULATOR</h1>
-    <div id="container">
-      <form id="containerForm">
-        <table id="detailsTable" align="center">
-          <tr>
-            <th>Type of Container</th>
-            <th colspan="7">Carton Measurements</th>
-          </tr>
-          <tr>
-            <td rowspan="13">
-              <label for="containerType"
-                ><u>Select the container:</u>
-                <br />
-                ⇓</label
-              >
-              <br />
-              <select id="containerType" name="containerType">
-                <option value="20">20ft Standard Container</option>
-                <option value="40">40ft Standard Container</option>
-                <option value="20hq">20ft High Cube Container</option>
-                <option value="40hq">40ft High Cube Container</option>
-                <option value="45">45ft High Cube Container</option>
-              </select>
-            </td>
-            <td>Size</td>
-            <td><label for="cartonLength1">Carton Length (mm):</label></td>
-            <td><label for="cartonWidth1">Carton Width (mm):</label></td>
-            <td><label for="cartonHeight1">Carton Height (mm):</label></td>
-            <td>
-              <label for="orderQty1"
-                >Order Qty<br />(Total Carton Qty =
-                <span id="totalCartonQty">0</span>)</label
-              >
-            </td>
-            <td>
-              Utilized CBM <br />(Total Utilized CBM =
-              <span id="totalUtilizedCbm">0.00</span>)
-            </td>
-            <td>
-              Empty CBM <br />
-              (Total Empty CBM = <span id="totalEmptyCbm">0.00</span>)
-            </td>
-          </tr>
-          <tr>
-            <td>01</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength1"
-                name="cartonLength1"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth1"
-                name="cartonWidth1"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight1"
-                name="cartonHeight1"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty1" name="orderQty1" min="0" />
-            </td>
-            <td id="utilizedCbmVal1"></td>
-            <td id="emptyCbmVal1"></td>
-          </tr>
-          <tr>
-            <td>02</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength2"
-                name="cartonLength2"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth2"
-                name="cartonWidth2"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight2"
-                name="cartonHeight2"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty2" name="orderQty2" min="0" />
-            </td>
-            <td id="utilizedCbmVal2"></td>
-            <td id="emptyCbmVal2"></td>
-          </tr>
-          <tr>
-            <td>03</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength3"
-                name="cartonLength3"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth3"
-                name="cartonWidth3"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight3"
-                name="cartonHeight3"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty3" name="orderQty3" min="0" />
-            </td>
-            <td id="utilizedCbmVal3"></td>
-            <td id="emptyCbmVal3"></td>
-          </tr>
-          <tr>
-            <td>04</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength4"
-                name="cartonLength4"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth4"
-                name="cartonWidth4"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight4"
-                name="cartonHeight4"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty4" name="orderQty4" min="0" />
-            </td>
-            <td id="utilizedCbmVal4"></td>
-            <td id="emptyCbmVal4"></td>
-          </tr>
-          <tr>
-            <td>05</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength5"
-                name="cartonLength5"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth5"
-                name="cartonWidth5"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight5"
-                name="cartonHeight5"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty5" name="orderQty5" min="0" />
-            </td>
-            <td id="utilizedCbmVal5"></td>
-            <td id="emptyCbmVal5"></td>
-          </tr>
-          <tr>
-            <td>06</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength6"
-                name="cartonLength6"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth6"
-                name="cartonWidth6"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight6"
-                name="cartonHeight6"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty6" name="orderQty6" min="0" />
-            </td>
-            <td id="utilizedCbmVal6"></td>
-            <td id="emptyCbmVal6"></td>
-          </tr>
-          <tr>
-            <td>07</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength7"
-                name="cartonLength7"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth7"
-                name="cartonWidth7"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight7"
-                name="cartonHeight7"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty7" name="orderQty7" min="0" />
-            </td>
-            <td id="utilizedCbmVal7"></td>
-            <td id="emptyCbmVal7"></td>
-          </tr>
-          <tr>
-            <td>08</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength8"
-                name="cartonLength8"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth8"
-                name="cartonWidth8"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight8"
-                name="cartonHeight8"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty8" name="orderQty8" min="0" />
-            </td>
-            <td id="utilizedCbmVal8"></td>
-            <td id="emptyCbmVal8"></td>
-          </tr>
-          <tr>
-            <td>09</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength9"
-                name="cartonLength9"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth9"
-                name="cartonWidth9"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight9"
-                name="cartonHeight9"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty9" name="orderQty9" min="0" />
-            </td>
-            <td id="utilizedCbmVal9"></td>
-            <td id="emptyCbmVal9"></td>
-          </tr>
-          <tr>
-            <td>10</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength10"
-                name="cartonLength10"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth10"
-                name="cartonWidth10"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight10"
-                name="cartonHeight10"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty10" name="orderQty10" min="0" />
-            </td>
-            <td id="utilizedCbmVal10"></td>
-            <td id="emptyCbmVal10"></td>
-          </tr>
-          <tr>
-            <td>11</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength11"
-                name="cartonLength11"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth11"
-                name="cartonWidth11"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight11"
-                name="cartonHeight11"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty11" name="orderQty11" min="0" />
-            </td>
-            <td id="utilizedCbmVal11"></td>
-            <td id="emptyCbmVal11"></td>
-          </tr>
-          <tr>
-            <td>12</td>
-            <td>
-              <input
-                type="number"
-                id="cartonLength12"
-                name="cartonLength12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonWidth12"
-                name="cartonWidth12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="cartonHeight12"
-                name="cartonHeight12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input type="number" id="orderQty12" name="orderQty12" min="0" />
-            </td>
-            <td id="utilizedCbmVal12"></td>
-            <td id="emptyCbmVal12"></td>
-          </tr>
-          <tr>
-            <td colspan="8" style="background-color: rgb(142, 240, 212)">
-              <b>If the carton bulging than the actual measurements</b>
-            </td>
-          </tr>
-          <tr>
-            <td>Size</td>
-            <td>
-              <label for="bulgingLength1"
-                >Add extra <br />
-                Length if <br />bulging<br />(mm):</label
-              >
-            </td>
-            <td>
-              <label for="bulgingWidth1"
-                >Add extra Width<br />if bulging<br />(mm):</label
-              >
-            </td>
-            <td>
-              <label for="bulgingHeight1"
-                >Add extra Height<br />if bulging<br />(mm):</label
-              >
-            </td>
-            <td>Size</td>
-            <td>
-              <label for="bulgingLength2"
-                >Add extra Length<br />if bulging<br />(mm):</label
-              >
-            </td>
-            <td>
-              <label for="bulgingWidth2"
-                >Add extra Width<br />if bulging<br />(mm):</label
-              >
-            </td>
-            <td>
-              <label for="bulgingHeight2"
-                >Add extra Height<br />if bulging<br />(mm):</label
-              >
-            </td>
-          </tr>
-          <tr>
-            <td>01</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength1"
-                name="bulgingLength1"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth1"
-                name="bulgingWidth1"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight1"
-                name="bulgingHeight1"
-                value="3"
-                min="0"
-              />
-            </td>
-            <td>02</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength2"
-                name="bulgingLength2"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth2"
-                name="bulgingWidth2"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight2"
-                name="bulgingHeight2"
-                value="3"
-                min="0"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>03</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength3"
-                name="bulgingLength3"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth3"
-                name="bulgingWidth3"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight3"
-                name="bulgingHeight3"
-                value="3"
-                min="0"
-              />
-            </td>
-            <td>04</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength4"
-                name="bulgingLength4"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth4"
-                name="bulgingWidth4"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight4"
-                name="bulgingHeight4"
-                value="3"
-                min="0"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>05</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength5"
-                name="bulgingLength5"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth5"
-                name="bulgingWidth5"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight5"
-                name="bulgingHeight5"
-                value="3"
-                min="0"
-              />
-            </td>
-            <td>06</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength6"
-                name="bulgingLength6"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth6"
-                name="bulgingWidth6"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight6"
-                name="bulgingHeight6"
-                value="3"
-                min="0"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>07</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength7"
-                name="bulgingLength7"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth7"
-                name="bulgingWidth7"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight7"
-                name="bulgingHeight7"
-                value="3"
-                min="0"
-              />
-            </td>
-            <td>08</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength8"
-                name="bulgingLength8"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth8"
-                name="bulgingWidth8"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight8"
-                name="bulgingHeight8"
-                value="3"
-                min="0"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>09</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength9"
-                name="bulgingLength9"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth9"
-                name="bulgingWidth9"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight9"
-                name="bulgingHeight9"
-                value="3"
-                min="0"
-              />
-            </td>
-            <td>10</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength10"
-                name="bulgingLength10"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth10"
-                name="bulgingWidth10"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight10"
-                name="bulgingHeight10"
-                value="3"
-                min="0"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td>11</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength11"
-                name="bulgingLength11"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth11"
-                name="bulgingWidth11"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight11"
-                name="bulgingHeight11"
-                value="3"
-                min="0"
-              />
-            </td>
-            <td>12</td>
-            <td>
-              <input
-                type="number"
-                id="bulgingLength12"
-                name="bulgingLength12"
-                value="0"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingWidth12"
-                name="bulgingWidth12"
-                value="12"
-                min="0"
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                id="bulgingHeight12"
-                name="bulgingHeight12"
-                value="3"
-                min="0"
-              />
-            </td>
-          </tr>
-        </table>
-        <br />
-        <button type="button" onclick="getContainerDetails()">Submit</button>
-        <button type="button" onclick="clearData()">Clear Data</button>
-      </form>
-      <div id="containerDetails" class="container-details"></div>
-      <div id="containerInfo" class="container-details">
-        <table id="detailsTable">
-          <caption style="font-size: x-large">
-            <b>Container Details</b>
-          </caption>
-          <br />
+    <div class="container">
+      <header>
+        <button
+          class="btn-home"
+          onclick="window.location.href='https://samantha-web.github.io/navigationhub/'"
+        >
+          <i class="fas fa-home"></i> Back to Home
+        </button>
+        <h1>
+          <i class="fas fa-calculator"></i> CONTAINER LOADING QTY CALCULATOR
+        </h1>
+        <div class="button-group">
+          <button
+            class="btn-primary"
+            type="button"
+            onclick="getContainerDetails()"
+          >
+            <i class="fas fa-calculator"></i> Calculate Loading
+          </button>
+          <button class="btn-secondary" type="button" onclick="clearData()">
+            <i class="fas fa-trash-alt"></i> Clear All Data
+          </button>
+        </div>
+      </header>
+
+      <div class="content-section">
+        <div class="section-title">
+          <i class="fas fa-box"></i> Container & Carton Specifications
+        </div>
+
+        <div class="summary-bar">
+          <div class="summary-item">
+            <div>Total Carton Qty</div>
+            <div class="summary-value" id="totalCartonQty">0</div>
+          </div>
+          <div class="summary-item">
+            <div>Total Utilized CBM</div>
+            <div class="summary-value" id="totalUtilizedCbm">0.00</div>
+          </div>
+          <div class="summary-item">
+            <div>Total Empty CBM</div>
+            <div class="summary-value" id="totalEmptyCbm">0.00</div>
+          </div>
+        </div>
+
+        <form id="containerForm">
+          <table id="detailsTable">
+            <tr>
+              <th>Type of Container</th>
+              <th colspan="7">Carton Measurements</th>
+            </tr>
+            <tr>
+              <td rowspan="13">
+                <label for="containerType">Select the container:</label>
+                <select id="containerType" name="containerType">
+                  <option value="20">20ft Standard Container</option>
+                  <option value="40">40ft Standard Container</option>
+                  <option value="20hq">20ft High Cube Container</option>
+                  <option value="40hq">40ft High Cube Container</option>
+                  <option value="45">45ft High Cube Container</option>
+                </select>
+              </td>
+              <td>Size</td>
+              <td>Carton Length (mm)</td>
+              <td>Carton Width (mm)</td>
+              <td>Carton Height (mm)</td>
+              <td>Order Qty</td>
+              <td>Utilized CBM</td>
+              <td>Empty CBM</td>
+            </tr>
+            <!-- Rows 1-12 for carton measurements -->
+            <tr>
+              <td>01</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength1"
+                  name="cartonLength1"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth1"
+                  name="cartonWidth1"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight1"
+                  name="cartonHeight1"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty1" name="orderQty1" min="0" />
+              </td>
+              <td id="utilizedCbmVal1">-</td>
+              <td id="emptyCbmVal1">-</td>
+            </tr>
+            <tr>
+              <td>02</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength2"
+                  name="cartonLength2"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth2"
+                  name="cartonWidth2"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight2"
+                  name="cartonHeight2"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty2" name="orderQty2" min="0" />
+              </td>
+              <td id="utilizedCbmVal2">-</td>
+              <td id="emptyCbmVal2">-</td>
+            </tr>
+            <tr>
+              <td>03</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength3"
+                  name="cartonLength3"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth3"
+                  name="cartonWidth3"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight3"
+                  name="cartonHeight3"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty3" name="orderQty3" min="0" />
+              </td>
+              <td id="utilizedCbmVal3">-</td>
+              <td id="emptyCbmVal3">-</td>
+            </tr>
+            <tr>
+              <td>04</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength4"
+                  name="cartonLength4"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth4"
+                  name="cartonWidth4"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight4"
+                  name="cartonHeight4"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty4" name="orderQty4" min="0" />
+              </td>
+              <td id="utilizedCbmVal4">-</td>
+              <td id="emptyCbmVal4">-</td>
+            </tr>
+            <tr>
+              <td>05</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength5"
+                  name="cartonLength5"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth5"
+                  name="cartonWidth5"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight5"
+                  name="cartonHeight5"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty5" name="orderQty5" min="0" />
+              </td>
+              <td id="utilizedCbmVal5">-</td>
+              <td id="emptyCbmVal5">-</td>
+            </tr>
+            <tr>
+              <td>06</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength6"
+                  name="cartonLength6"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth6"
+                  name="cartonWidth6"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight6"
+                  name="cartonHeight6"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty6" name="orderQty6" min="0" />
+              </td>
+              <td id="utilizedCbmVal6">-</td>
+              <td id="emptyCbmVal6">-</td>
+            </tr>
+            <tr>
+              <td>07</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength7"
+                  name="cartonLength7"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth7"
+                  name="cartonWidth7"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight7"
+                  name="cartonHeight7"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty7" name="orderQty7" min="0" />
+              </td>
+              <td id="utilizedCbmVal7">-</td>
+              <td id="emptyCbmVal7">-</td>
+            </tr>
+            <tr>
+              <td>08</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength8"
+                  name="cartonLength8"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth8"
+                  name="cartonWidth8"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight8"
+                  name="cartonHeight8"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty8" name="orderQty8" min="0" />
+              </td>
+              <td id="utilizedCbmVal8">-</td>
+              <td id="emptyCbmVal8">-</td>
+            </tr>
+            <tr>
+              <td>09</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength9"
+                  name="cartonLength9"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth9"
+                  name="cartonWidth9"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight9"
+                  name="cartonHeight9"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input type="number" id="orderQty9" name="orderQty9" min="0" />
+              </td>
+              <td id="utilizedCbmVal9">-</td>
+              <td id="emptyCbmVal9">-</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength10"
+                  name="cartonLength10"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth10"
+                  name="cartonWidth10"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight10"
+                  name="cartonHeight10"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="orderQty10"
+                  name="orderQty10"
+                  min="0"
+                />
+              </td>
+              <td id="utilizedCbmVal10">-</td>
+              <td id="emptyCbmVal10">-</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength11"
+                  name="cartonLength11"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth11"
+                  name="cartonWidth11"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight11"
+                  name="cartonHeight11"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="orderQty11"
+                  name="orderQty11"
+                  min="0"
+                />
+              </td>
+              <td id="utilizedCbmVal11">-</td>
+              <td id="emptyCbmVal11">-</td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonLength12"
+                  name="cartonLength12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonWidth12"
+                  name="cartonWidth12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="cartonHeight12"
+                  name="cartonHeight12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="orderQty12"
+                  name="orderQty12"
+                  min="0"
+                />
+              </td>
+              <td id="utilizedCbmVal12">-</td>
+              <td id="emptyCbmVal12">-</td>
+            </tr>
+            <tr>
+              <th colspan="8">
+                Bulging Adjustment (Add extra mm if carton bulging)
+              </th>
+            </tr>
+            <tr>
+              <td>Size</td>
+              <td>Extra Length (mm)</td>
+              <td>Extra Width (mm)</td>
+              <td>Extra Height (mm)</td>
+              <td>Size</td>
+              <td>Extra Length (mm)</td>
+              <td>Extra Width (mm)</td>
+              <td>Extra Height (mm)</td>
+            </tr>
+            <!-- Rows 1-12 for bulging adjustments -->
+            <tr>
+              <td>01</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength1"
+                  name="bulgingLength1"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth1"
+                  name="bulgingWidth1"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight1"
+                  name="bulgingHeight1"
+                  value="3"
+                  min="0"
+                />
+              </td>
+              <td>02</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength2"
+                  name="bulgingLength2"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth2"
+                  name="bulgingWidth2"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight2"
+                  name="bulgingHeight2"
+                  value="3"
+                  min="0"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>03</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength3"
+                  name="bulgingLength3"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth3"
+                  name="bulgingWidth3"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight3"
+                  name="bulgingHeight3"
+                  value="3"
+                  min="0"
+                />
+              </td>
+              <td>04</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength4"
+                  name="bulgingLength4"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth4"
+                  name="bulgingWidth4"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight4"
+                  name="bulgingHeight4"
+                  value="3"
+                  min="0"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>05</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength5"
+                  name="bulgingLength5"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth5"
+                  name="bulgingWidth5"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight5"
+                  name="bulgingHeight5"
+                  value="3"
+                  min="0"
+                />
+              </td>
+              <td>06</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength6"
+                  name="bulgingLength6"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth6"
+                  name="bulgingWidth6"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight6"
+                  name="bulgingHeight6"
+                  value="3"
+                  min="0"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>07</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength7"
+                  name="bulgingLength7"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth7"
+                  name="bulgingWidth7"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight7"
+                  name="bulgingHeight7"
+                  value="3"
+                  min="0"
+                />
+              </td>
+              <td>08</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength8"
+                  name="bulgingLength8"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth8"
+                  name="bulgingWidth8"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight8"
+                  name="bulgingHeight8"
+                  value="3"
+                  min="0"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>09</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength9"
+                  name="bulgingLength9"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth9"
+                  name="bulgingWidth9"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight9"
+                  name="bulgingHeight9"
+                  value="3"
+                  min="0"
+                />
+              </td>
+              <td>10</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength10"
+                  name="bulgingLength10"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth10"
+                  name="bulgingWidth10"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight10"
+                  name="bulgingHeight10"
+                  value="3"
+                  min="0"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength11"
+                  name="bulgingLength11"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth11"
+                  name="bulgingWidth11"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight11"
+                  name="bulgingHeight11"
+                  value="3"
+                  min="0"
+                />
+              </td>
+              <td>12</td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingLength12"
+                  name="bulgingLength12"
+                  value="0"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingWidth12"
+                  name="bulgingWidth12"
+                  value="12"
+                  min="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  id="bulgingHeight12"
+                  name="bulgingHeight12"
+                  value="3"
+                  min="0"
+                />
+              </td>
+            </tr>
+          </table>
+        </form>
+
+        <div class="note">
+          <i class="fas fa-info-circle"></i> <strong>Note:</strong> This
+          calculator helps determine how many cartons can fit in a shipping
+          container. Enter carton dimensions and quantities for up to 12
+          different carton sizes. The "Bulging Adjustment" allows you to add
+          extra space if your cartons tend to bulge beyond their specified
+          dimensions.
+        </div>
+
+        <div class="section-title">
+          <i class="fas fa-info-circle"></i> Container Details Reference
+        </div>
+
+        <table id="containerInfo">
           <tr>
             <th>Container Type</th>
             <th>Internal Dimensions (mm)</th>
@@ -918,14 +900,20 @@
           </tr>
         </table>
       </div>
-      <br />
-      <hr />
-      <footer id="footer">
-        Copyright Samantha 2025 © All rights reserved.<br />
+
+      <div id="containerDetails" class="content-section" style="display: none">
+        <div class="section-title">
+          <i class="fas fa-file-alt"></i> Loading Calculation Results
+        </div>
+        <div id="resultsContent"></div>
+      </div>
+
+      <footer>
+        <p>Copyright Samantha 2025 © All rights reserved.</p>
         <p>
-          <a href="mailto:s2880882@gmail.com"
-            >Email: s2880882@gmail.com (Samantha)</a
-          >
+          <a href="mailto:s2880882@gmail.com">
+            <i class="fas fa-envelope"></i> Email: s2880882@gmail.com (Samantha)
+          </a>
         </p>
       </footer>
     </div>
